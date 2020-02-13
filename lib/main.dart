@@ -8,6 +8,9 @@ mixin ProgressControllable {
   final List<void Function(bool value)> _callbacks = [];
   void Function(bool value) get callback => _callbacks.elementAt(0);
   void registerCallback(Function(bool value) callback) {
+    if (_callbacks.length > 0) {
+      _callbacks.clear();
+    }
     _callbacks.add(callback);
   }
 }
@@ -50,10 +53,7 @@ class ApiWidget extends StatefulWidget {
 class _ApiWidgetState extends State<ApiWidget> {
   bool _isLoading;
 
-  @override
-  void initState() {
-    super.initState();
-    _isLoading = widget.isLoading;
+  void _attachCallback() {
     if (widget.child is ProgressControllable) {
       (widget.child as ProgressControllable).registerCallback((bool value) {
         setState(() {
@@ -64,11 +64,19 @@ class _ApiWidgetState extends State<ApiWidget> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _isLoading = widget.isLoading;
+    _attachCallback();
+  }
+
+  @override
   void didUpdateWidget(ApiWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.isLoading != widget.isLoading) {
       _isLoading = widget.isLoading;
     }
+    _attachCallback();
   }
 
   @override
@@ -130,6 +138,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  bool _isLoading = false;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -141,11 +151,26 @@ class _MyHomePageState extends State<MyHomePage> {
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[
-            Text("Left"),
+            OutlineButton(
+              child: Text("Start"),
+              onPressed: () {
+                setState(() {
+                  _isLoading = true;
+                });
+              },
+            ),
             ApiWidget(
               MyProgressControllable(),
+              isLoading: _isLoading,
             ),
-            Text("Right"),
+            OutlineButton(
+              child: Text("End"),
+              onPressed: () {
+                setState(() {
+                  _isLoading = false;
+                });
+              },
+            ),
           ],
         ),
       ), // This trailing comma makes auto-formatting nicer for build methods.
